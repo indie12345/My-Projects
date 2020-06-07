@@ -28,8 +28,8 @@ to GPIO 33 was active low. Please change these defiitions as per your hardware *
 #define APPLIANCE_2_OFF digitalWrite(APPLIANCE_2, LOW)
 
 char state = 0;
-const char *ssid = "Hathway_Rahul";
-const char *password = "9611259699";
+const char *ssid = "YOUR_SSID";
+const char *password = "YOUR_PASSWORD";
 
 void update(char val);
 void updateA1on(void);
