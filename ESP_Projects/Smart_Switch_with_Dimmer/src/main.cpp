@@ -28,13 +28,13 @@
 #include "SinricProSwitch.h"
 #include "SinricProDimSwitch.h"
 
-#define WIFI_SSID         "Hathway_Rahul"    
-#define WIFI_PASS         "9611259699"
-#define APP_KEY           "51b37109-972f-41a3-8ab5-ac0dd9cd8a47"
-#define APP_SECRET        "e01ce25b-6b98-46ad-b8d2-3f9d20f4ff84-aac28400-e620-4107-8709-bf52532c6a6d"
+#define WIFI_SSID         "YOUR-SSID"    
+#define WIFI_PASS         "YOUR-PASSWORD"
+#define APP_KEY           "YOUR-APP-KEY"
+#define APP_SECRET        "YOUR-APP-SECRET"
 
-#define SWITCH_ID         "5edc036aea6d706213e58fb6"
-#define DIM_SWITCH_ID     "5edc0383ea6d706213e58fb9"   
+#define SWITCH_ID         "YOUR-SWITCH-ID"
+#define DIM_SWITCH_ID     "YOUR-DIMMER-ID"   
 
 #define BAUD_RATE         115200
 
