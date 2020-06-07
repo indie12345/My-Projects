@@ -55,85 +55,15 @@ struct
   int powerLevel = 0;
 } device_state;
 
-bool onPowerState(const String &deviceId, bool &state) 
-{
-  //Serial.printf("Device %s power turned %s \r\n", deviceId.c_str(), state?"on":"off");
-  Serial.printf("Flash light turned %s\r\n", state?"on":"off");
-  device_state.powerState = state;
-  ledcWrite(FLASH_CHANNEL, state? dutyCycle : 0);
-  return true;
-}
+bool onDimmerPowerState(const String &deviceId, bool &state);
+bool onDimmerPowerLevel(const String &deviceId, int &powerLevel);
+bool onDimmerAdjustPowerLevel(const String &deviceId, int &levelDelta);
+bool onSwitchPowerState(const String &deviceId, bool &state);
+void setupWiFi(void);
+void resumeState(void);
+void noConnectionState(void);
+void setupSinricPro(void);
 
-bool onPowerLevel(const String &deviceId, int &powerLevel) 
-{
-  device_state.powerLevel = powerLevel;
-  Serial.printf("Device %s power level changed to %d\r\n", deviceId.c_str(), device_state.powerLevel);
-  ledcWrite(FLASH_CHANNEL, (powerLevel << 2));
-  return true;
-}
-
-bool onAdjustPowerLevel(const String &deviceId, int &levelDelta) 
-{
-  device_state.powerLevel += levelDelta;
-  Serial.printf("Device %s power level changed about %i to %d\r\n", deviceId.c_str(), levelDelta, device_state.powerLevel);
-  levelDelta = device_state.powerLevel;
-  return true;
-}
-
-bool onPowerState1(const String &deviceId, bool &state) 
-{
-  digitalWrite(LED, !state);
-  Serial.printf("Device 1 turned %s\r\n", state?"on":"off");
-  return true;
-}
-
-void setupWiFi() 
-{
-  Serial.printf("\r\n[Wifi]: Connecting");
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-
-  while (WiFi.status() != WL_CONNECTED) 
-  {
-    Serial.printf(".");
-    delay(250);
-  }
-
-  Serial.printf("connected!\r\n[WiFi]: IP-Address is %s\r\n", WiFi.localIP().toString().c_str());
-}
-
-void resumeState()
-{
-  ledcSetup(FLASH_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
-  ledcWrite(FLASH_CHANNEL, ledState? dutyCycle : 0);
-}
-
-void noConnectionState()
-{
-  ledcSetup(FLASH_CHANNEL, 100, 8);
-  ledcWrite(FLASH_CHANNEL, 5);
-}
-
-// setup function for SinricPro
-void setupSinricPro() 
-{
-  SinricProDimSwitch &myDimSwitch = SinricPro[DIM_SWITCH_ID];
-
-  // set callback function to device
-  myDimSwitch.onPowerState(onPowerState);
-  myDimSwitch.onPowerLevel(onPowerLevel);
-  myDimSwitch.onAdjustPowerLevel(onAdjustPowerLevel);
-  
-  // add devices and callbacks to SinricPro
-  SinricProSwitch& mySwitch1 = SinricPro[SWITCH_ID];
-  mySwitch1.onPowerState(onPowerState1);
-
-  // setup SinricPro
-  SinricPro.onConnected([](){ Serial.printf("Connected to SinricPro\r\n"); resumeState();}); 
-  SinricPro.onDisconnected([](){ Serial.printf("Disconnected from SinricPro\r\n"); noConnectionState();});
-  SinricPro.begin(APP_KEY, APP_SECRET);
-}
-
-// main setup function
 void setup() 
 {
   pinMode(LED, OUTPUT);
@@ -151,4 +81,81 @@ void setup()
 void loop() 
 {
   SinricPro.handle();
+}
+
+bool onDimmerPowerState(const String &deviceId, bool &state) 
+{
+  //Serial.printf("Device %s power turned %s \r\n", deviceId.c_str(), state?"on":"off");
+  Serial.printf("Flash light turned %s\r\n", state?"on":"off");
+  device_state.powerState = state;
+  ledcWrite(FLASH_CHANNEL, state? dutyCycle : 0);
+  return true;
+}
+
+bool onDimmerPowerLevel(const String &deviceId, int &powerLevel) 
+{
+  device_state.powerLevel = powerLevel;
+  Serial.printf("Device %s power level changed to %d\r\n", deviceId.c_str(), device_state.powerLevel);
+  ledcWrite(FLASH_CHANNEL, (powerLevel << 2));
+  return true;
+}
+
+bool onDimmerAdjustPowerLevel(const String &deviceId, int &levelDelta) 
+{
+  device_state.powerLevel += levelDelta;
+  Serial.printf("Device %s power level changed about %i to %d\r\n", deviceId.c_str(), levelDelta, device_state.powerLevel);
+  levelDelta = device_state.powerLevel;
+  return true;
+}
+
+bool onSwitchPowerState(const String &deviceId, bool &state) 
+{
+  digitalWrite(LED, !state);
+  Serial.printf("Device 1 turned %s\r\n", state?"on":"off");
+  return true;
+}
+
+void setupWiFi(void) 
+{
+  Serial.printf("\r\n[Wifi]: Connecting");
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+
+  while (WiFi.status() != WL_CONNECTED) 
+  {
+    Serial.printf(".");
+    delay(250);
+  }
+
+  Serial.printf("connected!\r\n[WiFi]: IP-Address is %s\r\n", WiFi.localIP().toString().c_str());
+}
+
+void resumeState(void)
+{
+  ledcSetup(FLASH_CHANNEL, PWM_FREQ, PWM_RESOLUTION);
+  ledcWrite(FLASH_CHANNEL, ledState? dutyCycle : 0);
+}
+
+void noConnectionState(void)
+{
+  ledcSetup(FLASH_CHANNEL, 100, 8);
+  ledcWrite(FLASH_CHANNEL, 5);
+}
+
+void setupSinricPro(void) 
+{
+  SinricProDimSwitch &myDimSwitch = SinricPro[DIM_SWITCH_ID];
+
+  // set callback function to device
+  myDimSwitch.onPowerState(onDimmerPowerState);
+  myDimSwitch.onPowerLevel(onDimmerPowerLevel);
+  myDimSwitch.onAdjustPowerLevel(onDimmerAdjustPowerLevel);
+  
+  // add devices and callbacks to SinricPro
+  SinricProSwitch& mySwitch1 = SinricPro[SWITCH_ID];
+  mySwitch1.onPowerState(onSwitchPowerState);
+
+  // setup SinricPro
+  SinricPro.onConnected([](){ Serial.printf("Connected to SinricPro\r\n"); resumeState();}); 
+  SinricPro.onDisconnected([](){ Serial.printf("Disconnected from SinricPro\r\n"); noConnectionState();});
+  SinricPro.begin(APP_KEY, APP_SECRET);
 }
