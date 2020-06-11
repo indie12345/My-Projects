@@ -1,3 +1,7 @@
+/*********************************************************************
+Thanks to Adafruit for their GFX and SSD1306 libraries
+*********************************************************************/
+
 #include "Adafruit_GFX.h"
 #include "Adafruit_SSD1306.h"
 
@@ -219,13 +223,11 @@ void updateTime(void)
     /* Increment second */
     timeSec++;
     
-    /* Make seconds '0' when it reaches 60, increase 
-    the minute and update display with new time */
+    /* Make seconds '0' when it reaches 60, increase the minute */
     if(timeSec > 59)
     {
         timeSec = 0;
         timeMin++;
-        updateDisplay();
     }
     
     /* Make minute '0' when it reaches 60 and increase the hour */
@@ -263,6 +265,12 @@ void updateTime(void)
         {
             getTime(backupVariables.timeFormat);
         }
+    }
+    
+    /* Update the time whenever seconds is '0' */
+    if(!timeSec)
+    {
+        updateDisplay();
     }
     
     /* Draw lines to indicate seconds */
