@@ -14,14 +14,10 @@ Adafruit_SSD1306 display(-1);
 #define DISPLAY_I2C_ADDR    0x3C
 
 bool flag = FALSE;
-uint8_t timeHour, timeMin, timeSec;
+int timeHour, timeMin, timeSec;
 
 /* These must be of int type if we want to use Particle.variable function */
-struct values 
-{
-    int intensity; 
-    int timeFormat;
-}backupVariables;
+int backupVariable;
 
 void updateTime(void);
 void updateDisplay(void);
@@ -41,7 +37,7 @@ void setup()
     Particle.variable("Hour",  timeHour);
     Particle.variable("Minute", timeMin);
     Particle.variable("Second", timeSec);
-    Particle.variable("TimeFormat", backupVariables.timeFormat);
+    Particle.variable("TimeFormat", backupVariable);
     
     /* Expose function to set 12h or 24H mode from the APP or Web Console */
     Particle.function("WatchMode", watchMode);
@@ -51,21 +47,20 @@ void setup()
     display.begin(SSD1306_SWITCHCAPVCC, DISPLAY_I2C_ADDR);
     
     /* Get data from the EEPROM and load into the structure */
-    EEPROM.get(EEPROM_ADDR, backupVariables);
+    EEPROM.get(EEPROM_ADDR, backupVariable);
     
-    /* if the values from the EEPROM are unexpected then update the EEPROM */
-    if(backupVariables.timeFormat > 1)
+    /* if the value from the EEPROM is unexpected then update the EEPROM */
+    if((backupVariable != 1) && (backupVariable != 0))
     {
-        backupVariables.intensity = 0;
-        backupVariables.timeFormat = 0;
-        EEPROM.put(EEPROM_ADDR, backupVariables);
+        backupVariable = 0;
+        EEPROM.put(EEPROM_ADDR, backupVariable);
     }
     
     /* Set the time zone of India */
     setTimeZoneIndia();
     
     /* Get the time in 12H or 24H format */
-	getTime(backupVariables.timeFormat);
+	getTime(backupVariable);
 	
 	/* Update the display with the time */
 	updateDisplay();
@@ -107,108 +102,41 @@ void setTimeZoneGlobal(uint8_t value)
 /* Get time from the servers in specific format */
 void getTime(uint8_t timeFormat)
 {
+    int now = Time.now();
+    
     if(timeFormat)
     {
         /* Time in 24H format */
-        timeHour = Time.hour();
+        timeHour = Time.hour(now);
     }
     
     else
     {
         /* Time in 12H format */
-        timeHour = Time.hourFormat12();
+        timeHour = Time.hourFormat12(now);
     }
     
-    timeMin = Time.minute();
-    timeSec = Time.second();
+    timeMin = Time.minute(now);
+    timeSec = Time.second(now);
 }
 
 /* Update the display */
 void updateDisplay(void)
 {
+    char str[8];
+    
     display.clearDisplay();
     display.setTextSize(FONT_SIZE);
     display.setTextColor(WHITE);
     display.setCursor(0, 15);
     
-    /* The function only prints single digit if number is less than 10 so 
-        using this case to print numbers below 10 as strings to keep the 
-        formatting intact, once number is 10 or more its printed directly */
-    switch (timeHour)
-    {
-        case 0:
-            display.println("00");
-            break;
-        case 1:
-            display.println("01");
-            break;
-        case 2:
-            display.println("02");
-            break;
-            case 3:
-            display.println("03");
-            break;
-        case 4:
-            display.println("04");
-            break;
-        case 5:
-            display.println("05");
-            break;
-        case 6:
-            display.println("06");
-            break;
-        case 7:
-            display.println("07");
-            break;
-        case 8:
-            display.println("08");
-            break;
-        case 9:
-            display.println("09"); 
-            break;
-        default:
-            display.println(timeHour);
-            break;
-    }
+    snprintf(str, sizeof(str), "%02d", timeHour);
+    display.println(str);
     
     display.setCursor(67, 15);
     
-    switch (timeMin)
-    {
-        case 0:
-            display.println("00");
-            break;
-        case 1:
-            display.println("01");
-            break;
-        case 2:
-            display.println("02");
-            break;
-            case 3:
-            display.println("03");
-            break;
-        case 4:
-            display.println("04");
-            break;
-        case 5:
-            display.println("05");
-            break;
-        case 6:
-            display.println("06");
-            break;
-        case 7:
-            display.println("07");
-            break;
-        case 8:
-            display.println("08");
-            break;
-        case 9:
-            display.println("09"); 
-            break;
-        default:
-            display.println(timeMin);
-            break;
-    }
+    snprintf(str, sizeof(str), "%02d", timeMin);
+    display.println(str);
     
     /* Print the colon between minute and hour */
     display.setTextSize(FONT_SIZE - 1);
@@ -238,7 +166,7 @@ void updateTime(void)
     }
     
     /* Update the hour, depending on the time format */
-    if(backupVariables.timeFormat == HR_FORMAT)
+    if(backupVariable == HR_FORMAT)
     {
         if(timeHour == 24)
         {
@@ -263,7 +191,7 @@ void updateTime(void)
         tempTimeSec = Time.second();
         if((tempTimeSec > 32) || (tempTimeSec < 28))
         {
-            getTime(backupVariables.timeFormat);
+            getTime(backupVariable);
         }
     }
     
@@ -288,8 +216,8 @@ int watchMode(String cmd)
     if((cmd == "12H") || (cmd == "12h") || (cmd == "12"))
     {
         /* Update the variable and store it in EEPROM */
-        backupVariables.timeFormat = AM_PM_FORMAT;
-        EEPROM.put(EEPROM_ADDR, backupVariables);
+        backupVariable = AM_PM_FORMAT;
+        EEPROM.put(EEPROM_ADDR, backupVariable);
         
         /* Get the time in new format and update it on display */
         getTime(AM_PM_FORMAT);
@@ -299,8 +227,8 @@ int watchMode(String cmd)
     
     else if((cmd == "24H") || (cmd == "24h") || (cmd == "24"))
     {
-        backupVariables.timeFormat = HR_FORMAT;
-        EEPROM.put(EEPROM_ADDR, backupVariables);
+        backupVariable = HR_FORMAT;
+        EEPROM.put(EEPROM_ADDR, backupVariable);
         getTime(HR_FORMAT);
         updateDisplay();
         return 24;
