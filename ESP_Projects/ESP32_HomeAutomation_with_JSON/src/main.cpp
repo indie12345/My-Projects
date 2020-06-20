@@ -35,6 +35,52 @@ const char* password = "YOUR_PASSWORD";
 AsyncWebServer server(80);
 WebSocketsServer websocket(81);
 
+void linkNotFound(AsyncWebServerRequest *request);
+void handleRootJSON(AsyncWebServerRequest *request);
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
+
+void setup(void)
+{
+  Serial.begin(115200);
+
+  pinMode(ON_BOARD_LED, OUTPUT);
+  pinMode(EXTERNAL_CONNECTION, OUTPUT);
+
+  Serial.println("Connecting to:");
+  Serial.println(ssid);
+  
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) 
+  {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("WiFi connected.");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  
+  if (MDNS.begin("rahul")) 
+  {
+    Serial.println("MDNS responder started");
+  }
+
+  server.on("/", handleRootJSON);
+  server.onNotFound(linkNotFound);
+  server.begin();
+  
+  Serial.println("HTTP server started");
+  websocket.begin();
+  Serial.println("Websocket server started");
+  websocket.onEvent(webSocketEvent);
+}
+
+void loop(void)
+{
+  websocket.loop();
+}
+
 void handleRootJSON(AsyncWebServerRequest *request) 
 {
   const char webpage[] PROGMEM = R"rawliteral(
@@ -247,46 +293,4 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 
   appliance1Status = JSONdoc["Appliance 1"];
   digitalWrite(ON_BOARD_LED, appliance1Status);
-}
-
-void setup(void)
-{
-  Serial.begin(115200);
-
-  pinMode(ON_BOARD_LED, OUTPUT);
-  pinMode(EXTERNAL_CONNECTION, OUTPUT);
-
-  Serial.println("Connecting to:");
-  Serial.println(ssid);
-  
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) 
-  {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("");
-  Serial.println("WiFi connected.");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-  
-  if (MDNS.begin("rahul")) 
-  {
-    Serial.println("MDNS responder started");
-  }
-
-  server.on("/", handleRootJSON);
-  server.onNotFound(linkNotFound);
-  server.begin();
-  
-  Serial.println("HTTP server started");
-  websocket.begin();
-  Serial.println("Websocket server started");
-  websocket.onEvent(webSocketEvent);
-}
-
-void loop(void)
-{
-  websocket.loop();
 }
